@@ -1,0 +1,70 @@
+---
+title: "Fordgobike Flexdashboard"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(leaflet)
+library(plotly)
+
+```
+
+```{r}
+fordgobike19=read.csv("data/fordgobike19.csv")
+```
+
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Geo Locations of all Fordgobike Stations in the Bay Area.
+
+```{r}
+locations=fordgobike19%>%
+  select(start_station_name,start_station_latitude,start_station_longitude)%>%
+  group_by(start_station_name,start_station_latitude,start_station_longitude)%>%
+  summarise(n=n())
+base_plot=leaflet()%>%
+  addTiles()%>%
+  addMarkers(lng = ~start_station_longitude,lat = ~start_station_latitude,data = locations,popup = locations$start_station_name)
+base_plot%>%
+  setView(lng = -122.3621927,lat = 37.8074282,zoom = 12)
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Histogram of the Age of Fordgobike Users
+
+```{r}
+fordgobike19<- fordgobike19 %>% mutate(age = 2018 - member_birth_year)
+
+
+
+graph1=fordgobike19 %>% filter(age <= 80) %>% ggplot(aes(x=age, fill=member_gender)) + 
+  geom_histogram(aes(y=..density..),position="identity") + 
+  facet_grid(member_gender ~ .)
+ggplotly(graph1)  
+
+```
+
+### Hisotgram of the Duration of Fordgobike Trips for each Gender
+
+```{r}
+graph2=fordgobike19 %>% ggplot(aes(log(x=duration_sec), y=..density..,fill=member_gender)) + 
+  geom_histogram() + 
+  geom_density(aes(y=..density..)) +
+  facet_grid(member_gender ~ .)+ggtitle("")
+ggplotly(graph2)
+```
+
+
+
+
